@@ -99,7 +99,7 @@ drawProblemAndHeightList p =
   ===
   strutY space
   ===
-  (drawHeightList p ||| strutX space ||| (textSVG_ def "Height") # fc black)
+  (drawHeightList p ||| strutX space ||| textSVG_ def "Height" # fc black)
 
 diagrams ::
   Problem ->

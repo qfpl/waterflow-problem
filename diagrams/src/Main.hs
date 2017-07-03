@@ -1,11 +1,31 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Control.Monad (zipWithM_)
+
+import System.Directory
+
 import Diagrams.Prelude
-import Diagrams.Backend.SVG.CmdLine
+import Diagrams.Backend.SVG
 
 import Waterflow
 
--- TODO change this to running through `Waterflow.diagrams` and creating an SVG for every diagram in the list
+mkSameSize ::
+  [Diagram B] ->
+  [Diagram B]
+mkSameSize ds =
+  let
+    maxW = maximum . map width $ ds
+    maxH = maximum . map height $ ds
+    adjust d = (d ||| strutX (maxW  - width d)) === strutY (maxH - height d)
+  in
+    fmap adjust ds
+
 main :: IO ()
 main =
-  mainWith (drawProblemAndHeightList sampleProblem :: Diagram B)
+  let
+    ds = mkSameSize . diagrams $ sampleProblem
+    render i = renderSVG ("./images/image" ++ show i ++ ".svg") (mkHeight 800)
+  in do
+    createDirectoryIfMissing False "./images"
+    zipWithM_ render [0..] ds

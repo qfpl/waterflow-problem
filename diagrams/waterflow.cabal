@@ -20,6 +20,7 @@ executable waterflow
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.10
+                     , directory
                      , diagrams
                      , diagrams-lib
                      , diagrams-svg
