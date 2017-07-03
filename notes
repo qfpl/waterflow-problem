@@ -1,0 +1,13 @@
+list =    2 5 1 2 3 4 7 7 6
+fold =    2 turns into 7 turns into 8 ...
+scan =    2 7 8 10 ... collects results ... 
+
+fold max = 7
+scanl max =   [2,5,5,5,5,5,7,7,7]
+scanr max =   [7,7,7,7,7,7,7,7,6]
+draw lines on the grid showing the two scans
+
+zipWith min = [2,5,5,5,5,5,7,7,6] ... pairs with minimum
+              draw this line on grid to show "height of water"
+zipWith (-) = zeroes out the water line
+sum = volume
