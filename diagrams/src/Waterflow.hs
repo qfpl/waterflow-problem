@@ -47,7 +47,7 @@ sky =
 
 water :: Diagram B
 water =
-  gridBlock # fc lightblue
+  gridBlock # fc blue
 
 space :: Double
 space = 0.1
@@ -176,7 +176,7 @@ drawProblemAndScanl1Max p =
   vsep space [
       drawFoldl1MaxLine p (length . heights $ p) `atop` drawProblem p
     , drawHeightList p
-    , drawListFn (scanl1 max) "scanl1 max heights" p
+    , drawListFn (scanl1 max) "maxL = scanl1 max heights" p
     ]
 
 drawFoldr1Max ::
@@ -228,7 +228,7 @@ drawProblemAndFoldr1Max' p i =
   vsep space [
       drawFoldr1MaxLine p i `atop` drawFoldl1MaxLine p (length . heights $ p) `atop` drawProblem p
     , drawHeightList p
-    , drawListFn (scanl1 max) "scanl1 max heights" p
+    , drawListFn (scanl1 max) "maxL = scanl1 max heights" p
     , drawFoldr1Max p i
     ]
 
@@ -245,8 +245,8 @@ drawProblemAndScanr1Max p =
   vsep space [
       drawFoldr1MaxLine p (length . heights $ p) `atop` drawFoldl1MaxLine p (length . heights $ p) `atop` drawProblem p
     , drawHeightList p
-    , drawListFn (scanl1 max) "scanl1 max heights" p
-    , drawListFn (scanr1 max) "scanr1 max heights" p
+    , drawListFn (scanl1 max) "maxL = scanl1 max heights" p
+    , drawListFn (scanr1 max) "maxR = scanr1 max heights" p
     ]
 
 diagrams ::
@@ -259,9 +259,6 @@ diagrams p =
   drawProblemAndFoldr1Max p ++
   [drawProblemAndScanr1Max p]
 
--- show scanl max and scanr max
--- - include both lines on the graph
---
 -- animate zipWith min maxL maxR
 -- - on the numbers and the lines simultaneously
 --
