@@ -112,14 +112,11 @@ drawProblemAndHeights p =
     , drawHeightList
     ]
 
--- animate a foldl1 max of the heights
--- - weave the lines through on the graph
-
-drawFold1Max ::
+drawFoldl1Max ::
   Problem ->
   Int ->
   Diagram B
-drawFold1Max p@(Problem hs) i =
+drawFoldl1Max p@(Problem hs) i =
   let
     col x
       | x == i || (i == length hs && x == i - 1) = black
@@ -130,23 +127,20 @@ drawFold1Max p@(Problem hs) i =
   in
     hcat (zipWith f [0..] s) |||
     strutX space |||
-    textSVG_ def "fold1 max" # fc black
+    textSVG_ def "foldl1 max" # fc black
 
---    o = fromOffsets . map r2 $ [(0, 0), (1, 0), (0, 3), (1, 0), (0, -4)]
---    l = o # strokeLine # lc blue # lw veryThick # translate (r2 (-0.5, -5.5))
-
-drawFold1MaxLine ::
+drawFoldl1MaxLine ::
   Problem ->
   Int ->
   Diagram B
-drawFold1MaxLine p@(Problem hs) i =
+drawFoldl1MaxLine p@(Problem hs) i =
   let
     gridHeight = 1 + maximum hs
     across = r2 (1.0, 00)
     s = take (i + 1) . scanl1 max $ hs
     s' = case s of
       [] -> []
-      (h : t) -> h : s
+      (h : _) -> h : s
     o = fromOffsets .
         (++ [across]) .
         intersperse across .
@@ -164,9 +158,9 @@ drawProblemAndFoldl1Max' ::
   Diagram B
 drawProblemAndFoldl1Max' p i =
   vsep space [
-      drawFold1MaxLine p i `atop` drawProblem p
+      drawFoldl1MaxLine p i `atop` drawProblem p
     , drawHeightList p
-    , drawFold1Max p i
+    , drawFoldl1Max p i
     ]
 
 drawProblemAndFoldl1Max ::
@@ -180,9 +174,79 @@ drawProblemAndScanl1Max ::
   Diagram B
 drawProblemAndScanl1Max p =
   vsep space [
-      drawFold1MaxLine p (length . heights $ p) `atop` drawProblem p
+      drawFoldl1MaxLine p (length . heights $ p) `atop` drawProblem p
     , drawHeightList p
     , drawListFn (scanl1 max) "scanl1 max heights" p
+    ]
+
+drawFoldr1Max ::
+  Problem ->
+  Int ->
+  Diagram B
+drawFoldr1Max p@(Problem hs) i =
+  let
+    col x
+      | x == i || (i == length hs && x == i - 1) = black
+      | x == i - 1 = gray
+      | otherwise = white
+    f x h = (textSVG_ def (show h)) # fc (col x) # lc (col x)# centerX <> square 1 # fc white # lc white # lw veryThick
+    s = scanr1 max hs
+  in
+    hcat (reverse . zipWith f [0..] . reverse $ s) |||
+    strutX space |||
+    textSVG_ def "foldr1 max" # fc black
+
+drawFoldr1MaxLine ::
+  Problem ->
+  Int ->
+  Diagram B
+drawFoldr1MaxLine p@(Problem hs) i =
+  let
+    gridHeight = 1 + maximum hs
+    gridWidth = length hs
+    across = r2 (-1.0, 00)
+    s = take (i + 1) . reverse . scanr1 max $ hs
+    s' = case s of
+      [] -> []
+      (h : _) -> h : s
+    o = fromOffsets .
+        (++ [across]) .
+        intersperse across .
+        fmap (\x -> r2 (0.0, fromIntegral x)) .
+        zipWith (-) s $
+        s'
+  in
+    case s of
+      [] -> mempty
+      (h : _) -> o # strokeLine # lc red # lw veryThick # translate (r2 (-0.5 + (fromIntegral gridWidth), 0.5 + (fromIntegral $ h - gridHeight)))
+
+drawProblemAndFoldr1Max' ::
+  Problem ->
+  Int ->
+  Diagram B
+drawProblemAndFoldr1Max' p i =
+  vsep space [
+      drawFoldr1MaxLine p i `atop` drawFoldl1MaxLine p (length . heights $ p) `atop` drawProblem p
+    , drawHeightList p
+    , drawListFn (scanl1 max) "scanl1 max heights" p
+    , drawFoldr1Max p i
+    ]
+
+drawProblemAndFoldr1Max ::
+  Problem ->
+  [Diagram B]
+drawProblemAndFoldr1Max p =
+  fmap (drawProblemAndFoldr1Max' p) [0 .. length (heights p)]
+
+drawProblemAndScanr1Max ::
+  Problem ->
+  Diagram B
+drawProblemAndScanr1Max p =
+  vsep space [
+      drawFoldr1MaxLine p (length . heights $ p) `atop` drawFoldl1MaxLine p (length . heights $ p) `atop` drawProblem p
+    , drawHeightList p
+    , drawListFn (scanl1 max) "scanl1 max heights" p
+    , drawListFn (scanr1 max) "scanr1 max heights" p
     ]
 
 diagrams ::
@@ -191,12 +255,10 @@ diagrams ::
 diagrams p =
   fmap ($ p) [drawProblem, drawSolution, drawProblemAndHeights] ++
   drawProblemAndFoldl1Max p ++
-  [drawProblemAndScanl1Max p]
+  [drawProblemAndScanl1Max p] ++
+  drawProblemAndFoldr1Max p ++
+  [drawProblemAndScanr1Max p]
 
--- animate a foldr1 max of the heights
--- - weave the lines through on the graph
--- - animate a reveal of scanr1 max at the same time
---
 -- show scanl max and scanr max
 -- - include both lines on the graph
 --
