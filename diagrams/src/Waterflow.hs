@@ -3,6 +3,8 @@
 {-# LANGUAGE TypeFamilies              #-}
 module Waterflow where
 
+import Data.List (intersperse)
+
 import Diagrams.Prelude
 import Diagrams.Backend.SVG.CmdLine
 import Graphics.SVGFonts
@@ -82,35 +84,115 @@ drawSolution ::
 drawSolution p =
   drawWater p `atop` drawProblem p
 
-drawHeightList ::
+drawListFn ::
+  ([Int] -> [Int]) ->
+  String ->
   Problem ->
   Diagram B
-drawHeightList (Problem hs) =
+drawListFn g label (Problem hs) =
   let
     f h = (textSVG_ def (show h)) # fc black # centerX <> square 1 # fc white # lc white # lw veryThick
   in
-    hcat $ map f hs
+    hcat (map f . g $ hs) |||
+    strutX space |||
+    textSVG_ def label # fc black
 
-drawProblemAndHeightList ::
+drawHeightList ::
   Problem ->
   Diagram B
-drawProblemAndHeightList p =
-  drawProblem p
-  ===
-  strutY space
-  ===
-  (drawHeightList p ||| strutX space ||| textSVG_ def "Height" # fc black)
+drawHeightList =
+  drawListFn id "heights"
+
+drawProblemAndHeights ::
+  Problem ->
+  Diagram B
+drawProblemAndHeights p =
+  vsep space . fmap ($ p) $ [
+      drawProblem
+    , drawHeightList
+    ]
+
+-- animate a foldl1 max of the heights
+-- - weave the lines through on the graph
+
+drawFold1Max ::
+  Problem ->
+  Int ->
+  Diagram B
+drawFold1Max p@(Problem hs) i =
+  let
+    col x
+      | x == i || (i == length hs && x == i - 1) = black
+      | x == i - 1 = gray
+      | otherwise = white
+    f x h = (textSVG_ def (show h)) # fc (col x) # lc (col x)# centerX <> square 1 # fc white # lc white # lw veryThick
+    s = scanl1 max hs
+  in
+    hcat (zipWith f [0..] s) |||
+    strutX space |||
+    textSVG_ def "fold1 max" # fc black
+
+--    o = fromOffsets . map r2 $ [(0, 0), (1, 0), (0, 3), (1, 0), (0, -4)]
+--    l = o # strokeLine # lc blue # lw veryThick # translate (r2 (-0.5, -5.5))
+
+drawFold1MaxLine ::
+  Problem ->
+  Int ->
+  Diagram B
+drawFold1MaxLine p@(Problem hs) i =
+  let
+    gridHeight = 1 + maximum hs
+    across = r2 (1.0, 00)
+    s = take (i + 1) . scanl1 max $ hs
+    s' = case s of
+      [] -> []
+      (h : t) -> h : s
+    o = fromOffsets .
+        (++ [across]) .
+        intersperse across .
+        fmap (\x -> r2 (0.0, fromIntegral x)) .
+        zipWith (-) s $
+        s'
+  in
+    case s of
+      [] -> mempty
+      (h : _) -> o # strokeLine # lc blue # lw veryThick # translate (r2 (-0.5, 0.5 + (fromIntegral $ h - gridHeight)))
+
+drawProblemAndFoldl1Max' ::
+  Problem ->
+  Int ->
+  Diagram B
+drawProblemAndFoldl1Max' p i =
+  vsep space [
+      drawFold1MaxLine p i `atop` drawProblem p
+    , drawHeightList p
+    , drawFold1Max p i
+    ]
+
+drawProblemAndFoldl1Max ::
+  Problem ->
+  [Diagram B]
+drawProblemAndFoldl1Max p =
+  fmap (drawProblemAndFoldl1Max' p) [0 .. length (heights p)]
+
+drawProblemAndScanl1Max ::
+  Problem ->
+  Diagram B
+drawProblemAndScanl1Max p =
+  vsep space [
+      drawFold1MaxLine p (length . heights $ p) `atop` drawProblem p
+    , drawHeightList p
+    , drawListFn (scanl1 max) "scanl1 max heights" p
+    ]
 
 diagrams ::
   Problem ->
   [Diagram B]
 diagrams p =
-  fmap ($ p) [drawProblem, drawSolution, drawProblemAndHeightList]
+  fmap ($ p) [drawProblem, drawSolution, drawProblemAndHeights] ++
+  drawProblemAndFoldl1Max p ++
+  [drawProblemAndScanl1Max p]
 
--- animate a foldl1 max of the heights
--- - weave the lines through on the graph
--- - animate a reveal of scanl1 max at the same time
---
 -- animate a foldr1 max of the heights
 -- - weave the lines through on the graph
 -- - animate a reveal of scanr1 max at the same time
