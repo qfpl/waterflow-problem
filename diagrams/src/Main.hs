@@ -8,7 +8,9 @@ import System.Directory
 import Diagrams.Prelude
 import Diagrams.Backend.SVG
 
-import Waterflow
+import Waterflow.Haskell (haskellDiagrams)
+import Waterflow.Java (javaDiagrams)
+import Waterflow.Common (sampleProblem)
 
 mkSameSize ::
   [Diagram B] ->
@@ -24,8 +26,10 @@ mkSameSize ds =
 main :: IO ()
 main =
   let
-    ds = mkSameSize . diagrams $ sampleProblem
-    render i = renderSVG ("./images/image" ++ show i ++ ".svg") (mkHeight 800)
+    hds = mkSameSize . haskellDiagrams $ sampleProblem
+    jds = mkSameSize . javaDiagrams $ sampleProblem
+    render n i = renderSVG ("./images/" ++ n ++ show i ++ ".svg") (mkHeight 800)
   in do
     createDirectoryIfMissing False "./images"
-    zipWithM_ render [0..] ds
+    zipWithM_ (render "haskell") [0..] hds
+    zipWithM_ (render "java") [0..] jds

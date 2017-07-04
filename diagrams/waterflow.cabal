@@ -17,7 +17,9 @@ cabal-version:       >=1.10
 
 executable waterflow
   main-is:             Main.hs
-  -- other-modules:       
+  other-modules:       Waterflow.Haskell
+                     , Waterflow.Java
+                     , Waterflow.Common
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.10
                      , directory
