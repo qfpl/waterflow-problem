@@ -2,6 +2,7 @@
 module Main where
 
 import Control.Monad (zipWithM_)
+import Data.Bool(bool)
 
 import System.Directory
 
@@ -28,7 +29,9 @@ main =
   let
     hds = mkSameSize . haskellDiagrams $ sampleProblem
     jds = mkSameSize . javaDiagrams $ sampleProblem
-    render n i = renderSVG ("./images/" ++ n ++ show i ++ ".svg") (mkHeight 800)
+    number = bool id ('0':) <$> (9>) <*> show
+
+    render n i = renderSVG ("./images/" ++ n ++ number i ++ ".svg") (mkHeight 800)
   in do
     createDirectoryIfMissing False "./images"
     zipWithM_ (render "haskell") [0..] hds
