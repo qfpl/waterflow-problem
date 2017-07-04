@@ -545,8 +545,48 @@ diagrams p =
   drawProblemAndZipWithSub p ++
   [drawProblemAndSum p]
 
--- add sum volume
--- - merge the volume blocks
---
--- optional: show that we can inline the code
+-- Tools for a potential tidy up
 
+data Scene =
+  Scene {
+    lines :: Problem -> Diagram B
+  , overlay :: Problem -> Diagram B
+  , labels :: Problem -> [Diagram B]
+  }
+
+instance Monoid Scene where
+  mempty =
+    Scene (const mempty) (const mempty) (const mempty)
+  mappend (Scene li1 _ la1) (Scene li2 o2 la2) =
+    Scene (mappend li2 li1) o2 (mappend la1 la2)
+
+-- probably also want IndexedScene
+
+drawScene ::
+  Scene ->
+  Problem ->
+  Diagram B
+drawScene (Scene li o la) p =
+  vsep space $ mconcat [li p, o p, drawProblem p] : la p
+
+problemScene ::
+  Scene
+problemScene = mempty
+
+solutionScene ::
+  Scene
+solutionScene =
+  Scene mempty drawWaterSquares (const [])
+
+problemAndHeightsScene ::
+  Scene
+problemAndHeightsScene =
+  let
+    heightLine p =
+      let
+        hs = heights p
+        h = length hs
+      in
+        drawZipWithLine' p hs black h
+  in
+    Scene heightLine mempty (pure . drawHeightList)
