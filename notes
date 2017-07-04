@@ -11,3 +11,9 @@ zipWith min = [2,5,5,5,5,5,7,7,6] ... pairs with minimum
               draw this line on grid to show "height of water"
 zipWith (-) = zeroes out the water line
 sum = volume
+
+### dalaing 20170704
+
+* right++ vs right-- is also potential a security problem 
+* Non termination is a potential problem 
+* It might be quicker to do the Java diagrams by writing a subset of a Java interpreter in haskell that outputs diagrams - if so, you should tell the audience that 
