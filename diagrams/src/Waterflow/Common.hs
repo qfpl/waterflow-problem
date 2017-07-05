@@ -159,3 +159,31 @@ drawProblem (Problem hs) =
   in
     d
 
+drawWaterSquares ::
+  Problem ->
+  Diagram B
+drawWaterSquares p@(Problem hs) =
+  let
+    gridHeight = 1 + maximum hs
+    ws = waterHeights p
+    col w h =
+      if w == h
+      then strutX 1
+      else vcat $ replicate (gridHeight - w) (strutY 1) ++ replicate (w - h) water ++ replicate h (strutY 1)
+    d = hcat $ zipWith col ws hs
+  in
+    d
+
+drawSolution ::
+  Problem ->
+  Diagram B
+drawSolution p =
+  drawWaterSquares p `atop` drawProblem p
+
+commonDiagrams ::
+  Problem ->
+  [Diagram B]
+commonDiagrams p =
+  [ drawProblem p
+  , drawSolution p
+  ]

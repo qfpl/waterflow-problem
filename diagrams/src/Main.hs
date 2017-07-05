@@ -14,7 +14,7 @@ import Diagrams.Backend.SVG
 
 import Waterflow.Haskell (haskellDiagrams)
 import Waterflow.Java (javaDiagrams)
-import Waterflow.Common (sampleProblem)
+import Waterflow.Common (sampleProblem, commonDiagrams)
 
 mkSameSize ::
   [Diagram B] ->
@@ -59,6 +59,7 @@ renderImage f d = do
 main :: IO ()
 main =
   let
+    cds = mkSameSize . commonDiagrams $ sampleProblem
     hds = mkSameSize . haskellDiagrams $ sampleProblem
     jds = mkSameSize . javaDiagrams $ sampleProblem
     render' n i =
@@ -67,8 +68,14 @@ main =
     createDirectoryIfMissing False "./images"
     slides <- execWriterT $ do
       tell ["% FP talk\n", "% Tony Morris\n"]
-      tell ["# Haskell\n"]
+
+      tell ["# The problem\n"]
+      zipWithM_ (render' "problem") [0..] cds
+
+      tell ["# The Haskell solution\n"]
       zipWithM_ (render' "haskell") [0..] hds
-      tell ["# Java\n"]
+
+      tell ["# The Java solution\n"]
       zipWithM_ (render' "java") [0..] jds
+
     writeFile "./slides.md" (mconcat slides)
