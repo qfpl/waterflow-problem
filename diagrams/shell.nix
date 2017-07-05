@@ -8,7 +8,7 @@ let
                        then pkgs.haskellPackages
                        else pkgs.haskell.packages.${compiler};
 
-  drv = haskellPackages.callPackage ./. {};
+  drv = haskellPackages.callPackage ./waterflow.nix {};
 
 in
 
