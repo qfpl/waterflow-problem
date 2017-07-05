@@ -1,8 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Main where
 
 import Control.Monad (zipWithM_)
 import Data.Bool(bool)
+
+import Control.Monad.Writer
 
 import System.Directory
 
@@ -24,15 +27,48 @@ mkSameSize ds =
   in
     fmap adjust ds
 
+mkFileName ::
+  String ->
+  Int ->
+  String
+mkFileName n i =
+  let
+    number = bool id ('0':) <$> (9>) <*> show
+  in
+    "./images/" ++ n ++ number i ++ ".svg"
+
+mkSlide ::
+  String ->
+  [String]
+mkSlide fileName =
+  [ "##\n\n"
+  , "![](" ++ fileName ++ ")\n\n"
+  ]
+
+renderImage ::
+  ( MonadIO m
+  , MonadWriter [String] m
+  ) =>
+  String ->
+  Diagram B ->
+  m ()
+renderImage f d = do
+  tell $ mkSlide f
+  liftIO $ renderSVG f (mkHeight 800) d
+
 main :: IO ()
 main =
   let
     hds = mkSameSize . haskellDiagrams $ sampleProblem
     jds = mkSameSize . javaDiagrams $ sampleProblem
-    number = bool id ('0':) <$> (9>) <*> show
-
-    render n i = renderSVG ("./images/" ++ n ++ number i ++ ".svg") (mkHeight 800)
+    render' n i =
+      renderImage (mkFileName n i)
   in do
     createDirectoryIfMissing False "./images"
-    zipWithM_ (render "haskell") [0..] hds
-    zipWithM_ (render "java") [0..] jds
+    slides <- execWriterT $ do
+      tell ["% FP talk\n", "% Tony Morris\n"]
+      tell ["# Haskell\n"]
+      zipWithM_ (render' "haskell") [0..] hds
+      tell ["# Java\n"]
+      zipWithM_ (render' "java") [0..] jds
+    writeFile "./slides.md" (mconcat slides)

@@ -1,5 +1,5 @@
-{ mkDerivation, base, diagrams, diagrams-lib, diagrams-svg
-, directory, stdenv, SVGFonts
+{ mkDerivation, base, containers, diagrams, diagrams-lib
+, diagrams-svg, directory, lens, mtl, stdenv, SVGFonts
 }:
 mkDerivation {
   pname = "waterflow";
@@ -8,7 +8,8 @@ mkDerivation {
   isLibrary = false;
   isExecutable = true;
   executableHaskellDepends = [
-    base diagrams diagrams-lib diagrams-svg directory SVGFonts
+    base containers diagrams diagrams-lib diagrams-svg directory lens
+    mtl SVGFonts
   ];
   license = stdenv.lib.licenses.bsd3;
 }

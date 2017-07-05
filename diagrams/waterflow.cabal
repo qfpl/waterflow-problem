@@ -23,6 +23,9 @@ executable waterflow
   -- other-extensions:    
   build-depends:       base >=4.9 && <4.10
                      , directory
+                     , mtl
+                     , containers
+                     , lens
                      , diagrams
                      , diagrams-lib
                      , diagrams-svg

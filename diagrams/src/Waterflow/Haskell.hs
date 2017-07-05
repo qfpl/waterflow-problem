@@ -9,9 +9,15 @@ import Data.List (intersperse, groupBy)
 
 import Diagrams.Prelude
 import Diagrams.Backend.SVG.CmdLine
-import Graphics.SVGFonts
 
 import Waterflow.Common
+
+tHeights, tMaxL, tMaxR, tWaterHeights, tVolumes :: Diagram B
+tHeights = txt black "heights"
+tMaxL = txt blue "maxL"
+tMaxR = txt red "maxR"
+tWaterHeights = txt purple "waterHeights"
+tVolumes = txt lightblue "volumes"
 
 drawWaterSquares ::
   Problem ->
@@ -33,26 +39,6 @@ drawSolution ::
   Diagram B
 drawSolution p =
   drawWaterSquares p `atop` drawProblem p
-
-drawListFn ::
-  ([Int] -> [Int]) ->
-  Colour Double ->
-  Diagram B ->
-  Problem ->
-  Diagram B
-drawListFn g col label (Problem hs) =
-  let
-    f h = (textSVG_ def (show h)) # fc col # lc col # centerX <> square 1 # fc white # lc white # lw veryThick
-  in
-    hcat (map f . g $ hs) |||
-    strutX space |||
-    label
-
-drawHeightList ::
-  Problem ->
-  Diagram B
-drawHeightList =
-  drawListFn id black $ textSVG_ def "heights" # fc black # lc black
 
 drawProblemAndHeights ::
   Problem ->
@@ -77,12 +63,12 @@ drawFoldl1Max p@(Problem hs) i =
       | x == i || (i == length hs && x == i - 1) = blue
       | x == i - 1 = lightblue
       | otherwise = white
-    f x h = (textSVG_ def (show h)) # fc (col x) # lc (col x)# centerX <> square 1 # fc white # lc white # lw veryThick
+    f x = onSquare . txtShow (col x) 
     s = scanl1 max hs
   in
     hcat (zipWith f [0..] s) |||
     strutX space |||
-    textSVG_ def "foldl1 max" # fc gray # lc gray
+    t "foldl1 max"
 
 drawFoldl1MaxLine ::
   Problem ->
@@ -132,9 +118,7 @@ drawProblemAndFoldl1Max p =
 maxLLabel ::
   Diagram B
 maxLLabel =
-  textSVG_ def "maxL" # fc blue # lc blue |||
-  textSVG_ def " = scanl1 max " # fc gray # lc gray |||
-  textSVG_ def "heights" # fc black # lc black
+  hcat [tMaxL,  t " = scanl1 max ", tHeights]
 
 drawProblemAndScanl1Max ::
   Problem ->
@@ -161,12 +145,12 @@ drawFoldr1Max p@(Problem hs) i =
       | x == i || (i == length hs && x == i - 1) = red
       | x == i - 1 = lightpink
       | otherwise = white
-    f x h = (textSVG_ def (show h)) # fc (col x) # lc (col x)# centerX <> square 1 # fc white # lc white # lw veryThick
+    f x = onSquare . txtShow (col x)
     s = scanr1 max hs
   in
     hcat (reverse . zipWith f [0..] . reverse $ s) |||
     strutX space |||
-    textSVG_ def "foldr1 max" # fc gray # lc gray
+    t "foldr1 max"
 
 drawFoldr1MaxLine ::
   Problem ->
@@ -219,9 +203,7 @@ drawProblemAndFoldr1Max p =
 maxRLabel ::
   Diagram B
 maxRLabel =
-  textSVG_ def "maxR" # fc red # lc red |||
-  textSVG_ def " = scanl1 max " # fc gray # lc gray |||
-  textSVG_ def "heights" # fc black # lc black
+  hcat [tMaxR, t " = scanr1 max ", tHeights]
 
 drawProblemAndScanr1Max ::
   Problem ->
@@ -242,56 +224,10 @@ drawProblemAndScanr1Max p@(Problem hs) =
 
 -- TODO would be good to highlight the inputs to fold / zipWith as they are being used
 
-drawZipWith' ::
-  [Int] ->
-  Colour Double ->
-  Diagram B ->
-  Int ->
-  Diagram B
-drawZipWith' vs c label i =
-  let
-    col x
-      | (x <= i) = c
-      | otherwise = white
-    f x v = (textSVG_ def (show v)) # fc (col x) # lc (col x) # centerX <> square 1 # fc white # lc white # lw veryThick
-  in
-    hcat (zipWith f [0..] vs) |||
-    strutX space |||
-    label
-
-drawZipWithLine' ::
-  Problem ->
-  [Int] ->
-  Colour Double ->
-  Int ->
-  Diagram B
-drawZipWithLine' (Problem hs) vs col i =
-  let
-    gridHeight = 1 + maximum hs
-    across = r2 (1.0, 00)
-    s = take (i + 1) vs
-    s' = case s of
-      [] -> []
-      (h : _) -> h : s
-    o = fromOffsets .
-        (++ [across]) .
-        intersperse across .
-        fmap (\x -> r2 (0.0, fromIntegral x)) .
-        zipWith (-) s $
-        s'
-  in
-    case s of
-      [] -> mempty
-      (h : _) -> o # strokeLine # lc col # lw veryThick # translate (r2 (-0.5, 0.5 + (fromIntegral $ h - gridHeight)))
-
 waterHeightLabel ::
   Diagram B
 waterHeightLabel =
-  textSVG_ def "waterHeights" # fc purple # lc purple |||
-  textSVG_ def " = zipWith min " # fc gray # lc gray |||
-  textSVG_ def "maxL" # fc blue # lc blue |||
-  textSVG_ def " " # fc gray # lc gray |||
-  textSVG_ def "maxR" # fc red # lc red
+  hcat [tWaterHeights, t " = zipWith min ", tMaxL, t " ", tMaxR]
 
 drawProblemAndZipWithMin' ::
   Problem ->
@@ -353,11 +289,7 @@ drawWaterColumns p@(Problem hs) =
 volumesLabel ::
   Diagram B
 volumesLabel =
-  textSVG_ def "volumes" # fc lightblue # lc lightblue |||
-  textSVG_ def " = zipWith (-) " # fc gray # lc gray |||
-  textSVG_ def "waterHeights" # fc purple # lc purple |||
-  textSVG_ def " " # fc gray # lc gray |||
-  textSVG_ def "heights" # fc black # lc black
+  hcat [tVolumes, t " = zipWith (-) ", tWaterHeights, t " ", tHeights]
 
 drawProblemAndZipWithSub' ::
   Problem ->
@@ -455,8 +387,7 @@ drawWater (Problem hs) =
 sumLabel ::
   Diagram B
 sumLabel =
-  textSVG_ def "answer = sum " # fc grey # lc grey |||
-  textSVG_ def "volumes" # fc lightblue # lc lightblue
+  hcat [t "answer = sum ", tVolumes]
 
 drawProblemAndSum ::
   Problem ->
