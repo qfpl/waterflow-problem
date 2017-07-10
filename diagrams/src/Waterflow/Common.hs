@@ -62,7 +62,18 @@ txt ::
   String ->
   Diagram B
 txt c s =
-  textSVG_ def s # fc c # lc c
+  textSVG_ waterflowTextOpts s # fc c # lc c
+
+waterflowTextOpts ::
+  TextOpts Double
+waterflowTextOpts =
+  TextOpts
+    lin
+    INSIDE_H
+    KERN
+    False
+    1
+    1
 
 txtShow ::
   Show a =>

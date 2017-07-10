@@ -67,15 +67,15 @@ main =
   in do
     createDirectoryIfMissing False "./images"
     slides <- execWriterT $ do
-      tell ["% FP talk\n", "% Tony Morris\n"]
+      tell ["% Why Functional Programming?\n", "% Tony Morris\n"]
 
-      tell ["# The problem\n"]
+      tell ["# An example of a programming problem \n"]
       zipWithM_ (render' "problem") [0..] cds
 
-      tell ["# The Haskell solution\n"]
-      zipWithM_ (render' "haskell") [0..] hds
-
-      tell ["# The Java solution\n"]
+      tell ["# The not Functional Programming solution\n"]
       zipWithM_ (render' "java") [0..] jds
+
+      tell ["# The Functional Programming solution\n"]
+      zipWithM_ (render' "haskell") [0..] hds
 
     writeFile "./slides.md" (mconcat slides)
