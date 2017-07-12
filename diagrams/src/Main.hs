@@ -72,10 +72,10 @@ main =
       tell ["# An example of a programming problem \n"]
       zipWithM_ (render' "problem") [0..] cds
 
-      tell ["# The not Functional Programming solution\n"]
+      tell ["# A solution using conventional programming \n"]
       zipWithM_ (render' "java") [0..] jds
 
-      tell ["# The Functional Programming solution\n"]
+      tell ["# A solution using functional programming \n"]
       zipWithM_ (render' "haskell") [0..] hds
 
     writeFile "./slides.md" (mconcat slides)
