@@ -366,7 +366,20 @@ drawWater (Problem hs) =
 sumLabel ::
   Diagram B
 sumLabel =
-  hcat [t "answer = sum ", tVolumes]
+  hcat [t "sum ", tVolumes]
+
+drawSum ::
+  Int ->
+  Int ->
+  Diagram B
+drawSum h v =
+  let
+    f x
+      | x == (h `div` 2) = txtShow lightblue v
+      | otherwise = mempty
+    row = hcat . fmap (onSquare . f) $ [0 .. h-1]
+  in
+    row ||| strutX space ||| sumLabel
 
 drawProblemAndSum ::
   Problem ->
@@ -376,6 +389,7 @@ drawProblemAndSum p@(Problem hs) =
     h = length hs
     waterHeight = zipWith min (scanl1 max hs) (scanr1 max hs)
     volumes = zipWith (-) waterHeight hs
+    answer = sum volumes
   in
     vsep space [
         drawZipWithLine' p waterHeight purple h `atop`
@@ -389,7 +403,7 @@ drawProblemAndSum p@(Problem hs) =
       , drawListFn (scanr1 max) red maxRLabel p
       , drawZipWith' waterHeight purple waterHeightLabel h
       , drawZipWith' volumes lightblue volumesLabel h
-      , drawListFn id white sumLabel p
+      , drawSum h answer
       ]
 
 haskellDiagrams ::
