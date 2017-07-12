@@ -40,7 +40,7 @@ drawFoldl1Max p@(Problem hs) i =
   let
     col x
       | x == i || (i == length hs && x == i - 1) = blue
-      | x == i - 1 = lightblue
+      | x < i = lightblue
       | otherwise = white
     f x = onSquare . txtShow (col x) 
     s = scanl1 max hs
@@ -92,7 +92,7 @@ drawProblemAndFoldl1Max ::
   Problem ->
   [Diagram B]
 drawProblemAndFoldl1Max p =
-  fmap (drawProblemAndFoldl1Max' p) [0 .. length (heights p)]
+  fmap (drawProblemAndFoldl1Max' p) [0 .. length (heights p) - 1]
 
 maxLLabel ::
   Diagram B
@@ -122,7 +122,7 @@ drawFoldr1Max p@(Problem hs) i =
   let
     col x
       | x == i || (i == length hs && x == i - 1) = red
-      | x == i - 1 = lightpink
+      | x < i = lightpink
       | otherwise = white
     f x = onSquare . txtShow (col x)
     s = scanr1 max hs
@@ -177,7 +177,7 @@ drawProblemAndFoldr1Max ::
   Problem ->
   [Diagram B]
 drawProblemAndFoldr1Max p =
-  fmap (drawProblemAndFoldr1Max' p) [0 .. length (heights p)]
+  fmap (drawProblemAndFoldr1Max' p) [0 .. length (heights p) - 1]
 
 maxRLabel ::
   Diagram B
