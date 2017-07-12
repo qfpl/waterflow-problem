@@ -14,7 +14,7 @@ import Diagrams.Backend.SVG
 
 import Waterflow.Haskell (haskellDiagrams)
 import Waterflow.Java (javaDiagrams)
-import Waterflow.Common (sampleProblem, commonDiagrams)
+import Waterflow.Common (Problem, sampleProblem, commonDiagrams)
 
 mkSameSize ::
   [Diagram B] ->
@@ -56,12 +56,29 @@ renderImage f d = do
   tell $ mkSlide f
   liftIO $ renderSVG f (mkHeight 800) d
 
+data JavaAnimationLength =
+    JALPartial
+  | JALFull
+  deriving (Eq, Show)
+
+data TalkOptions =
+  TalkOptions {
+    toJavaAnimationLength :: JavaAnimationLength
+  } deriving (Eq, Show)
+
+trimJavaDiagrams :: TalkOptions -> [Diagram B] -> [Diagram B]
+trimJavaDiagrams o =
+  case toJavaAnimationLength o of
+    JALPartial -> take 35
+    JALFull    -> id
+
 main :: IO ()
 main =
   let
+    opts = TalkOptions JALPartial
     cds = mkSameSize . commonDiagrams $ sampleProblem
     hds = mkSameSize . haskellDiagrams $ sampleProblem
-    jds = mkSameSize . javaDiagrams $ sampleProblem
+    jds = mkSameSize . trimJavaDiagrams opts . javaDiagrams $ sampleProblem
     render' n i =
       renderImage (mkFileName n i)
   in do
