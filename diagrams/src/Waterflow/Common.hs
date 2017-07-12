@@ -62,7 +62,7 @@ txt ::
   String ->
   Diagram B
 txt c s =
-  textSVG_ waterflowTextOpts s # fc c # lc c
+  textSVG_ waterflowTextOpts s # fc c # lc c # lwN 0.001
 
 waterflowTextOpts ::
   TextOpts Double
@@ -80,13 +80,15 @@ txtShow ::
   Colour Double ->
   a ->
   Diagram B
-txtShow c s =
-  textSVG_ def (show s) # fc c # lc c
+txtShow c =
+  txt c .
+  show
 
 t ::
   String ->
   Diagram B
-t = txt gray
+t =
+  txt gray
 
 txtBg :: Diagram B
 txtBg = square 1 # fc white # lc white # lw veryThick
