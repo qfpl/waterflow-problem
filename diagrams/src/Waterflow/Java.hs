@@ -310,11 +310,11 @@ drawCode ixes =
       -- CodeIndex 21 1
       , m [ t "return " , tVolume , t ";"]
       ]
+
     hlColour = lightpink
 
-    -- TODO this could be done better
     hl :: Diagram B -> Diagram B
-    hl d = d # alignL <> square 1 # alignL # scaleX (width d) # scaleY (height d) # fc hlColour # lc hlColour
+    hl d = d # bg hlColour
 
     f (CodeIndex i j) =
       Map.adjust (Map.adjust hl j) i
