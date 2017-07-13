@@ -89,10 +89,10 @@ main =
       tell ["# An example of a programming problem \n"]
       zipWithM_ (render' "problem") [0..] cds
 
-      tell ["# A solution using conventional programming \n"]
-      zipWithM_ (render' "java") [0..] jds
-
       tell ["# A solution using functional programming \n"]
       zipWithM_ (render' "haskell") [0..] hds
+
+      tell ["# A solution using conventional programming \n"]
+      zipWithM_ (render' "java") [0..] jds
 
     writeFile "./slides.md" (mconcat slides)
