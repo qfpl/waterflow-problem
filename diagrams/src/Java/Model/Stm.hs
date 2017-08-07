@@ -12,24 +12,25 @@ import Control.Monad.State (get)
 import Control.Monad.Writer (tell)
 
 import Java.Program
+import Java.Model.JavaShow
 import Java.Model.Expr
 
 data Stm v a where
-  DeclVar  :: Show a => Var v a -> Expr v a -> Stm v ()
-  WriteRef :: Show a => Ref v a -> Expr v a -> Stm v ()
+  DeclVar  :: JavaShow a => Var v a -> Expr v a -> Stm v ()
+  WriteRef :: JavaShow a => Ref v a -> Expr v a -> Stm v ()
 
-  Seq      :: Show a => Stm v a -> Stm v b -> Stm v b
-  While    :: Show a => Expr v Bool -> Stm v a -> Stm v ()
-  If       :: Show a => Expr v Bool -> Stm v a -> Stm v ()
-  IfElse   :: (Show a, Show b) => Expr v Bool -> Stm v a -> Stm v b -> Stm v ()
+  Seq      :: JavaShow a => Stm v a -> Stm v b -> Stm v b
+  While    :: JavaShow a => Expr v Bool -> Stm v a -> Stm v ()
+  If       :: JavaShow a => Expr v Bool -> Stm v a -> Stm v ()
+  IfElse   :: (JavaShow a, JavaShow b) => Expr v Bool -> Stm v a -> Stm v b -> Stm v ()
 
-  PreInc   :: (Show a, Num a) => Ref v a -> Stm v a
-  PostInc  :: (Show a, Num a) => Ref v a -> Stm v a
-  PreDec   :: (Show a, Num a) => Ref v a -> Stm v a
-  PostDec  :: (Show a, Num a) => Ref v a -> Stm v a
-  WriteAdd :: (Show a, Num a) => Ref v a -> Expr v a -> Stm v ()
-  WriteSub :: (Show a, Num a) => Ref v a -> Expr v a -> Stm v ()
-  WriteMul :: (Show a, Num a) => Ref v a -> Expr v a -> Stm v ()
+  PreInc   :: (JavaShow a, Num a) => Ref v a -> Stm v a
+  PostInc  :: (JavaShow a, Num a) => Ref v a -> Stm v a
+  PreDec   :: (JavaShow a, Num a) => Ref v a -> Stm v a
+  PostDec  :: (JavaShow a, Num a) => Ref v a -> Stm v a
+  WriteAdd :: (JavaShow a, Num a) => Ref v a -> Expr v a -> Stm v ()
+  WriteSub :: (JavaShow a, Num a) => Ref v a -> Expr v a -> Stm v ()
+  WriteMul :: (JavaShow a, Num a) => Ref v a -> Expr v a -> Stm v ()
 
   Return  :: Expr v a -> Stm v a
 
@@ -226,7 +227,7 @@ runReturn ixs r = do
   runExprToLit r
 
 runStm ::
-  Show a =>
+  JavaShow a =>
   Stm v a ->
   Program v a
 runStm s = do
@@ -235,7 +236,7 @@ runStm s = do
   pure x
 
 runStm' ::
-  Show a =>
+  JavaShow a =>
   Stm v a ->
   Program v a
 runStm' (DeclVar v e) = do

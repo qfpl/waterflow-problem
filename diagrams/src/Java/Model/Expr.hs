@@ -14,6 +14,7 @@ module Java.Model.Expr (
 import Control.Lens
 
 import Java.Program
+import Java.Model.JavaShow
 
 data Ref v a where
   RVar :: Var v a -> Ref v a
@@ -30,7 +31,7 @@ ref (RIx r _) =
   ignored
 
 writeRef ::
-  Show a =>
+  JavaShow a =>
   Ref v a ->
   CodeWriter [CodeIndex]
 writeRef (RVar v) = do
@@ -56,75 +57,129 @@ runRef (RIx r ix) = do
 data Expr v a where
   Lit     :: a -> Expr v a
   ReadRef :: Ref v a -> Expr v a
-  Eq      :: (Eq a, Show a) => Expr v a -> Expr v a -> Expr v Bool
-  Neq     :: (Eq a, Show a) => Expr v a -> Expr v a -> Expr v Bool
-  Lt      :: (Ord a, Show a) => Expr v a -> Expr v a -> Expr v Bool
-  Lte     :: (Ord a, Show a) => Expr v a -> Expr v a -> Expr v Bool
-  Gt      :: (Ord a, Show a) => Expr v a -> Expr v a -> Expr v Bool
-  Gte     :: (Ord a, Show a) => Expr v a -> Expr v a -> Expr v Bool
+  Eq      :: (Eq a, JavaShow a) => Expr v a -> Expr v a -> Expr v Bool
+  Neq     :: (Eq a, JavaShow a) => Expr v a -> Expr v a -> Expr v Bool
+  Lt      :: (Ord a, JavaShow a) => Expr v a -> Expr v a -> Expr v Bool
+  Lte     :: (Ord a, JavaShow a) => Expr v a -> Expr v a -> Expr v Bool
+  Gt      :: (Ord a, JavaShow a) => Expr v a -> Expr v a -> Expr v Bool
+  Gte     :: (Ord a, JavaShow a) => Expr v a -> Expr v a -> Expr v Bool
   And     :: Expr v Bool -> Expr v Bool -> Expr v Bool
   Or      :: Expr v Bool -> Expr v Bool -> Expr v Bool
   Not     :: Expr v Bool -> Expr v Bool
-  Add     :: (Num a, Show a) => Expr v a -> Expr v a -> Expr v a
-  Sub     :: (Num a, Show a) => Expr v a -> Expr v a -> Expr v a
-  Mul     :: (Num a, Show a) => Expr v a -> Expr v a -> Expr v a
-  Length  :: Show a => Expr v [a] -> Expr v Int
+  Add     :: (Num a, JavaShow a) => Expr v a -> Expr v a -> Expr v a
+  Sub     :: (Num a, JavaShow a) => Expr v a -> Expr v a -> Expr v a
+  Mul     :: (Num a, JavaShow a) => Expr v a -> Expr v a -> Expr v a
+  Length  :: JavaShow a => Expr v [a] -> Expr v Int
+
+{-
+prec :: Expr v a -> Int
+prec (Lit _) = 0
+prec (ReadRef _) = 0
+prec (Eq _ _) = 4
+prec (Neq _ _) = 4
+prec (Lt _ _) = 4
+prec (Lte _ _) = 4
+prec (Gt _ _) = 4
+prec (Gte _ _) = 4
+prec (And _ _) = 3
+prec (Or _ _) = 2
+prec (Not _) = 0
+prec (Add _ _) = 6
+prec (Sub _ _) = 6
+prec (Mul _ _) = 7
+prec (Length _) = 0
+
+3 * 4 + 2
+(3 * 4) + 2
+3 * (4 + 2)
+if the parent precedence is higher than our precedence, add parens
+
+-}
 
 writeBin ::
-  Show a =>
+  JavaShow a =>
+  Int ->
   Expr v a ->
   Expr v a ->
   String ->
   CodeWriter [CodeIndex]
-writeBin e1 e2 op = do
-  ix0 <- addChunk "("
-  ix1s <- writeExpr e1
+writeBin d e1 e2 op = do
+  ix1s <- writeExpr' d e1
   ix2 <- addChunk $ mconcat [" ", op, " "]
-  ix3s <- writeExpr e2
-  ix4 <- addChunk ")"
-  pure $ mconcat [pure ix0, ix1s, pure ix2, ix3s, pure ix4]
+  ix3s <- writeExpr' d e2
+  pure $ mconcat [ix1s, pure ix2, ix3s]
 
 writeExpr ::
-  Show a =>
+  JavaShow a =>
   Expr v a ->
   CodeWriter [CodeIndex]
-writeExpr (Lit x) = do
-  ix <- addChunk . show $ x
+writeExpr =
+  writeExpr' 0
+
+wrapParen ::
+  Bool ->
+  CodeWriter [CodeIndex] ->
+  CodeWriter [CodeIndex]
+wrapParen False cw = cw
+wrapParen True cw = do
+  _ <- addChunk "("
+  res <- cw
+  _ <- addChunk ")"
+  pure res
+
+writeExpr' ::
+  JavaShow a =>
+  Int ->
+  Expr v a ->
+  CodeWriter [CodeIndex]
+writeExpr' _ (Lit x) = do
+  ix <- addChunk . javaShow $ x
   pure [ix]
-writeExpr (ReadRef r) = do
+writeExpr' _ (ReadRef r) =
   writeRef r
-writeExpr (Eq e1 e2) =
-  writeBin e1 e2 "=="
-writeExpr (Neq e1 e2) =
-  writeBin e1 e2 "/="
-writeExpr (Lt e1 e2) =
-  writeBin e1 e2 "<"
-writeExpr (Lte e1 e2) =
-  writeBin e1 e2 "<="
-writeExpr (Gt e1 e2) =
-  writeBin e1 e2 ">"
-writeExpr (Gte e1 e2) =
-  writeBin e1 e2 ">="
-writeExpr (And e1 e2) =
-  writeBin e1 e2 "&&"
-writeExpr (Or e1 e2) =
-  writeBin e1 e2 "||"
-writeExpr (Not e1) = do
-  ix0 <- addChunk "!("
-  ix1s <- writeExpr e1
-  ix2 <- addChunk ")"
-  pure $ mconcat [pure ix0, ix1s, pure ix2]
-writeExpr (Add e1 e2) =
-  writeBin e1 e2 "+"
-writeExpr (Sub e1 e2) =
-  writeBin e1 e2 "-"
-writeExpr (Mul e1 e2) =
-  writeBin e1 e2 "*"
-writeExpr (Length e1) = do
-  ix0 <- addChunk "("
-  ix1s <- writeExpr e1
-  ix2 <- addChunk ".length)"
-  pure $ mconcat [pure ix0, ix1s, pure ix2]
+writeExpr' d (Eq e1 e2) =
+  wrapParen (d > 4) $
+    writeBin 4 e1 e2 "=="
+writeExpr' d (Neq e1 e2) =
+  wrapParen (d > 4) $
+    writeBin 4 e1 e2 "/="
+writeExpr' d (Lt e1 e2) =
+  wrapParen (d > 4) $
+    writeBin 4 e1 e2 "<"
+writeExpr' d (Lte e1 e2) =
+  wrapParen (d > 4) $
+    writeBin 4 e1 e2 "<="
+writeExpr' d (Gt e1 e2) =
+  wrapParen (d > 4) $
+    writeBin 4 e1 e2 ">"
+writeExpr' d (Gte e1 e2) =
+  wrapParen (d > 4) $
+    writeBin 4 e1 e2 ">="
+writeExpr' d (And e1 e2) =
+  wrapParen (d > 3) $
+    writeBin 3 e1 e2 "&&"
+writeExpr' d (Or e1 e2) =
+  wrapParen (d > 2) $
+    writeBin 2 e1 e2 "||"
+writeExpr' d (Not e1) =
+  wrapParen (d > 10) $ do
+    ix0 <- addChunk "!"
+    ix1s <- writeExpr' 10 e1
+    pure $ mconcat [pure ix0, ix1s]
+writeExpr' d (Add e1 e2) =
+  wrapParen (d > 6) $
+    writeBin 6 e1 e2 "+"
+writeExpr' d (Sub e1 e2) =
+  wrapParen (d > 6) $
+    writeBin 6 e1 e2 "-"
+writeExpr' d (Mul e1 e2) =
+  wrapParen (d > 7) $
+    writeBin 7 e1 e2 "*"
+writeExpr' d (Length e1) =
+  wrapParen (d > 10) $ do
+    ix1s <- writeExpr' 10 e1
+    ix2 <- addChunk ".length"
+    pure $ mconcat [ix1s, pure ix2]
 
 lift1 ::
   (Expr v a -> Expr v b) ->

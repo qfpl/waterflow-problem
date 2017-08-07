@@ -21,7 +21,7 @@ executable waterflow
                      , Waterflow.Java
                      , Waterflow.Common
                      , Java.Program
-                     , Java.Model.Ref
+                     , Java.Model.JavaShow
                      , Java.Model.Expr
                      , Java.Model.Stm
                      , Java.Model.Test

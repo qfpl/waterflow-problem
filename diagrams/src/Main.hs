@@ -16,6 +16,8 @@ import Waterflow.Haskell (haskellDiagrams)
 import Waterflow.Java (javaDiagrams)
 import Waterflow.Common (Problem, sampleProblem, commonDiagrams)
 
+import Java.Model.Test (waterflowDiagrams, testDiagrams)
+
 mkSameSize ::
   [Diagram B] ->
   [Diagram B]
@@ -76,6 +78,7 @@ main :: IO ()
 main =
   let
     opts = TalkOptions JALPartial
+    tds = mkSameSize . waterflowDiagrams $ sampleProblem
     cds = mkSameSize . commonDiagrams $ sampleProblem
     hds = mkSameSize . haskellDiagrams $ sampleProblem
     jds = mkSameSize . trimJavaDiagrams opts . javaDiagrams $ sampleProblem
@@ -85,6 +88,9 @@ main =
     createDirectoryIfMissing False "./images"
     slides <- execWriterT $ do
       tell ["% Why Functional Programming?\n", "% Tony Morris\n"]
+
+      tell ["# Testing \n"]
+      zipWithM_ (render' "test") [0..] tds
 
       tell ["# An example of a programming problem \n"]
       zipWithM_ (render' "problem") [0..] cds
