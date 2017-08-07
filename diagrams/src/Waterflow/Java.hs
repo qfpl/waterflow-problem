@@ -29,302 +29,68 @@ import Graphics.SVGFonts
 
 import Waterflow.Common
 
-tHeights, tLeft, tRight, tLeftMax, tRightMax, tVolume :: Diagram B
-tHeights = txt black "heights"
-tLeft = txt blue "left"
-tRight = txt red "right"
-tLeftMax = txt darkblue "leftMax"
-tRightMax = txt darkred "rightMax"
-tVolume = txt lightblue "volume"
+import Java.Program
+import Java.Model.Expr
+import Java.Model.Stm
 
-data Vars =
-  Vars {
-    _vLeft :: Int
-  , _vRight :: Int
-  , _vLeftMax :: Int
-  , _vRightMax :: Int
-  , _vVolume :: Int
-  }
+data WaterflowVars =
+  WaterflowVars {
+    _wHeights :: [Int]
+  , _wLeft :: Int
+  , _wRight :: Int
+  , _wLeftMax :: Int
+  , _wRightMax :: Int
+  , _wVolume :: Int
+  } deriving (Eq, Show)
 
-makeLenses ''Vars
+makeLenses ''WaterflowVars
 
-initialVars ::
-  Problem ->
-  Vars
-initialVars p =
-  Vars 0 (pred . length . heights $ p) 0 0 0
+vHeights :: Var WaterflowVars [Int]
+vHeights = Var "heights" black "int[]" wHeights
 
--- reader for problem
--- state for vars
--- writer for list of segments
+vLeft :: Var WaterflowVars Int
+vLeft = Var "left" blue "int" wLeft
 
-type ProgramRun m =
-  ( MonadReader Problem m
-  , MonadState Vars m
-  , MonadWriter [([CodeIndex], Vars)] m
-  )
+vRight :: Var WaterflowVars Int
+vRight = Var "right" red "int" wRight
 
-runWhile ::
-  ProgramRun m =>
-  m ()
-runWhile = do
-  v <- get
-  tell [([CodeIndex 6 1], v)]
-  l <- use vLeft
-  r <- use vRight
-  if l < r
-  then do
-    runChangeLMax
-    runChangeRMax
-    runChangeVolume
-    runWhile
-  else pure ()
+vLeftMax :: Var WaterflowVars Int
+vLeftMax = Var "leftMax" darkblue "int" wLeftMax
 
-getHeightL ::
-  ProgramRun m =>
-  m Int
-getHeightL = do
-  li <- use vLeft
-  hs <- asks heights
-  return $ hs !! li
+vRightMax :: Var WaterflowVars Int
+vRightMax = Var "rightMax" darkred "int" wRightMax
 
-checkLMax ::
-  ProgramRun m =>
-  Int ->
-  m Bool
-checkLMax l = do
-  v <- get
-  tell [([CodeIndex 7 1], v)]
-  lm <- use vLeftMax
-  return $ l > lm
+vVolume :: Var WaterflowVars Int
+vVolume = Var "volume" lightblue "int" wVolume
 
-updateLMax ::
-  ProgramRun m =>
-  Int ->
-  m ()
-updateLMax l = do
-  v <- get
-  tell [([CodeIndex 8 1], v)]
-  vLeftMax .= l
-  v' <- get
-  tell [([CodeIndex 8 1], v')]
-
-runChangeLMax ::
-  ProgramRun m =>
-  m ()
-runChangeLMax = do
-  l <- getHeightL
-  b <- checkLMax l
-  when b $ updateLMax l
-
-getHeightR ::
-  ProgramRun m =>
-  m Int
-getHeightR = do
-  ri <- use vRight
-  hs <- asks heights
-  return $ hs !! ri
-
-checkRMax ::
-  ProgramRun m =>
-  Int ->
-  m Bool
-checkRMax r = do
-  v <- get
-  tell [([CodeIndex 10 1], v)]
-  rm <- use vRightMax
-  return $ r > rm
-
-updateRMax ::
-  ProgramRun m =>
-  Int ->
-  m ()
-updateRMax r = do
-  v <- get
-  tell [([CodeIndex 11 1], v)]
-  vRightMax .= r
-  v' <- get
-  tell [([CodeIndex 11 1], v')]
-
-runChangeRMax ::
-  ProgramRun m =>
-  m ()
-runChangeRMax = do
-  r <- getHeightR
-  b <- checkRMax r
-  when b $ updateRMax r
-
-checkSide ::
-  ProgramRun m =>
-  m Bool
-checkSide = do
-  v <- get
-  tell [([CodeIndex 13 1], v)]
-  lm <- use vLeftMax
-  rm <- use vRightMax
-  pure $ lm >= rm
-
-addVolumeRight ::
-  ProgramRun m =>
-  m ()
-addVolumeRight = do
-  v <- get
-  rm <- use vRightMax
-  tell [([CodeIndex 14 2], v)]
-  tell [([CodeIndex 14 1, CodeIndex 14 2], v)]
-  ri <- use vRight
-  hs <- asks heights
-  let r = hs !! ri
-  vVolume += rm - r
-  v' <- get
-  tell [([CodeIndex 14 1, CodeIndex 14 2], v')]
-
-decRight ::
-  ProgramRun m =>
-  m ()
-decRight = do
-  v <- get
-  tell [([CodeIndex 15 1], v)]
-  vRight -= 1
-  v' <- get
-  tell [([CodeIndex 15 1], v')]
-
-addVolumeLeft ::
-  ProgramRun m =>
-  m ()
-addVolumeLeft = do
-  v <- get
-  lm <- use vLeftMax
-  tell [([CodeIndex 17 2], v)]
-  tell [([CodeIndex 17 1, CodeIndex 17 2], v)]
-  li <- use vLeft
-  hs <- asks heights
-  let l = hs !! li
-  vVolume += lm - l
-  v' <- get
-  tell [([CodeIndex 17 1, CodeIndex 17 2], v')]
-
-incLeft ::
-  ProgramRun m =>
-  m ()
-incLeft = do
-  v <- get
-  tell [([CodeIndex 18 1], v)]
-  vLeft += 1
-  v' <- get
-  tell [([CodeIndex 18 1], v')]
-
-runChangeVolume ::
-  ProgramRun m =>
-  m ()
-runChangeVolume = do
-  b <- checkSide
-  if b
-  then do
-    addVolumeRight
-    decRight
-  else do
-    addVolumeLeft
-    incLeft
-
-runReturn ::
-  ProgramRun m =>
-  m ()
-runReturn = do
-  v <- get
-  tell [([CodeIndex 21 1], v)]
-  return ()
-
-runProgram ::
-  ( MonadReader Problem m
-  , MonadState Vars m
-  , MonadWriter [([CodeIndex], Vars)] m
-  ) =>
-  m ()
-runProgram = do
-  runWhile
-  runReturn
-
-results ::
-  Problem ->
-  [([CodeIndex], Vars)]
-results p =
-  flip runReader p .
-  flip evalStateT (initialVars p) .
-  execWriterT $
-  runProgram
-
-drawResult ::
-  Problem ->
-  [CodeIndex] ->
-  Vars ->
-  Diagram B
-drawResult p cis vs =
+waterflow :: Problem -> Stm WaterflowVars Int
+waterflow (Problem hs) =
   let
-    code = drawCode cis
+    heightsIx v =
+      ReadRef (RIx (RVar vHeights) (ReadRef (RVar v)))
   in
-    code ||| annotateProblem p vs -- # sized (mkHeight (height code))
-
-data CodeIndex = CodeIndex Int Int
-
-drawCode ::
-  [CodeIndex] ->
-  Diagram B
-drawCode ixes =
-  let
-    m = Map.fromList . zip [0..]
-    s = m . pure
-    segments = m [
-        s $ t "int " ||| tLeft ||| t " = 0;"
-      , s $ t "int " ||| tRight ||| t " = tHeights.length - 1;"
-      , s $ t "int " ||| tLeftMax ||| t " = 0;"
-      , s $ t "int " ||| tRightMax ||| t " = 0;"
-      , s $ t "int " ||| tVolume ||| t " = 0;"
-      , s $ t " "
-      -- CodeIndex 6 1
-      , m [ t "while ( ", tLeft ||| t " < " ||| tRight, t " ) {"]
-      -- CodeIndex 7 1
-      , m [ t "  if ( " , tHeights ||| t "[" ||| tLeft ||| t "] > " ||| tLeftMax , t " ) {"]
-      -- CodeIndex 8 1
-      , m [ t "    " , tLeftMax ||| t " = " ||| tHeights ||| t "[" ||| tLeft , t "];"]
-      , s $ t "  }"
-      -- CodeIndex 10 1
-      , m [ t "  if ( " , tHeights ||| t "[" ||| tRight ||| t "] > " ||| tRightMax,  t " ) {"]
-      -- CodeIndex 11 1
-      , m [ t "    " , tRightMax ||| t " = " ||| tHeights ||| t "[" ||| tRight , t "];"]
-      , s $ t "  }"
-      -- CodeIndex 13 1
-      , m [ t "  if ( " , tLeftMax ||| t " >= " ||| tRightMax , t " ) {"]
-      -- CodeIndex 14 1 and 14 2 -- maybe we should take a list of segments to highlight
-      -- we want 14 2 and then 14 1 + 14 2
-      , m [t "    " , tVolume ||| t " += ", tRightMax ||| t " - " ||| tHeights ||| t "[" ||| tRight ||| t "]", t ";"]
-      -- CodeIndex 15 1
-      , m [ t "    " , tRight ||| t "--;"]
-      , s $ t "  } else {"
-      -- CodeIndex 17 1 and 17 2
-      , m [t "    " , tVolume ||| t " += " , tLeftMax ||| t " - " ||| tHeights ||| t "[" ||| tLeft ||| t "]", t ";"]
-      -- CodeIndex 18 1
-      , m [ t "    " , tLeft ||| t "++;"]
-      , s $ t "  }"
-      , s $ t "}"
-      -- CodeIndex 21 1
-      , m [ t "return " , tVolume , t ";"]
-      ]
-
-    hlColour = lightpink
-
-    hl :: Diagram B -> Diagram B
-    hl d = d # bg hlColour
-
-    f (CodeIndex i j) =
-      Map.adjust (Map.adjust hl j) i
-
-    segments' = foldr f segments ixes
-
-    collapse :: Map Int (Map Int k) -> [[k]]
-    collapse = fmap Map.elems . Map.elems
-  in
-    vcat . fmap hcat . collapse $ segments'
+    DeclVar vHeights (Lit hs) `Seq`
+    DeclVar vLeft (Lit 0) `Seq`
+    DeclVar vRight (Sub (Length (ReadRef (RVar vHeights))) (Lit 1)) `Seq`
+    DeclVar vLeftMax (Lit 0) `Seq`
+    DeclVar vRightMax (Lit 0) `Seq`
+    DeclVar vVolume (Lit 0) `Seq`
+    While (Lt (ReadRef (RVar vLeft)) (ReadRef (RVar vRight))) (
+      If (Gt (heightsIx vLeft) (ReadRef (RVar vLeftMax))) (
+          WriteRef (RVar vLeftMax) (ReadRef (RIx (RVar vHeights) (ReadRef (RVar vLeft))))
+      ) `Seq`
+      If (Gt (heightsIx vRight) (ReadRef (RVar vRightMax))) (
+          WriteRef (RVar vRightMax) (ReadRef (RIx (RVar vHeights) (ReadRef (RVar vRight))))
+      ) `Seq`
+      IfElse (Gte (ReadRef (RVar vLeftMax)) (ReadRef (RVar vRightMax))) (
+          WriteAdd (RVar vVolume) (Sub (ReadRef (RVar vRightMax)) (heightsIx vRight)) `Seq`
+          PostDec (RVar vRight)
+      ) (
+          WriteAdd (RVar vVolume) (Sub (ReadRef (RVar vLeftMax)) (heightsIx vLeft)) `Seq`
+          PostInc (RVar vLeft)
+      )
+    ) `Seq`
+    Return (ReadRef (RVar vVolume))
 
 drawLeftAndRight ::
   Int ->
@@ -353,26 +119,26 @@ drawVolume h v =
       | otherwise = mempty
     row = hcat . fmap (onSquare . f) $ [0 .. h-1]
   in
-    hsep space [row, tVolume]
+    hsep space [row, txt lightblue "volume"]
 
 labelLeftMax ::
-  Problem ->
+  Int ->
   Int ->
   Diagram B
-labelLeftMax p lm =
+labelLeftMax mh lm =
   let
-    gridHeight = 1 + maximum (heights p)
+    gridHeight = 1 + mh
     yOffset = 0.5 + (-1 * fromIntegral (gridHeight - lm))
   in
     txt darkblue "LM" # centerY # translateY yOffset
 
 labelRightMax ::
-  Problem ->
+  Int ->
   Int ->
   Diagram B
-labelRightMax p rm =
+labelRightMax mh rm =
   let
-    gridHeight = 1 + maximum (heights p)
+    gridHeight = 1 + mh
     yOffset = 0.5 + (-1 * fromIntegral (gridHeight - rm))
   in
     txt darkred "RM" # centerY # translateY yOffset
@@ -420,15 +186,15 @@ drawCircle x y col =
               # translateY (0.5 + (-1) * fromIntegral y)
 
 drawProblem' ::
-  Problem ->
-  Vars ->
+  WaterflowVars ->
   Diagram B
-drawProblem' p@(Problem hs) (Vars l r lm rm _) =
+drawProblem' (WaterflowVars hs l r lm rm _) =
   let
     gridHeight = 1 + maximum hs
     gridWidth = length hs
-    lLeft = labelLeftMax p lm
-    lRight = labelRightMax p rm
+    mh = maximum hs
+    lLeft = labelLeftMax mh lm
+    lRight = labelRightMax mh rm
     problemWithLines = mconcat [
         drawCircle l (gridHeight - hs !! l) blue
       , drawVLine gridHeight l blue
@@ -436,38 +202,23 @@ drawProblem' p@(Problem hs) (Vars l r lm rm _) =
       , drawCircle r (gridHeight - hs !! r) red
       , drawVLine gridHeight r red
       , drawHLine gridWidth (gridHeight - rm) darkred
-      , drawProblem p
+      , drawProblem (Problem hs)
       ]
   in
     beside (r2 (1, 0)) (beside (r2 (-1, 0)) problemWithLines (lLeft ||| strutX space)) (strutX space ||| lRight)
 
-drawHeightList' ::
-  Problem ->
-  Diagram B
-drawHeightList' p =
+drawVars :: WaterflowVars -> Diagram B
+drawVars v@(WaterflowVars heights left right leftMax rightMax volume) =
   let
-    row = hcat . fmap (onSquare . txtShow black) . heights $ p
-  in
-    hsep space [row, tHeights]
-
-annotateProblem ::
-  Problem ->
-  Vars ->
-  Diagram B
-annotateProblem p vars@(Vars l r lm rm v) =
-  let
-    h = length . heights $ p
+    h = length heights
     pieces = [
-        drawProblem' p vars
-      , drawLeftAndRight h l r
-      , drawVolume h v
+        drawProblem' v
+      , drawLeftAndRight h left right
+      , drawVolume h volume
       ]
   in
     vsep space pieces
 
-javaDiagrams ::
-  Problem ->
-  [Diagram B]
-javaDiagrams p =
-  drawResult p [] (initialVars p) :
-  fmap (uncurry $ drawResult p) (results p)
+javaDiagrams :: Problem -> [Diagram B]
+javaDiagrams p@(Problem hs) =
+  animateProgram (WaterflowVars hs 0 0 0 0 0) (runStm $ waterflow p) drawVars

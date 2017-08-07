@@ -24,8 +24,6 @@ executable waterflow
                      , Java.Model.JavaShow
                      , Java.Model.Expr
                      , Java.Model.Stm
-                     , Java.Model.Test
-  -- other-extensions:    
   build-depends:       base >=4.9 && <4.10
                      , directory
                      , mtl
