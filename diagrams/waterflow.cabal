@@ -12,7 +12,7 @@ maintainer:          dave.laing.80@gmail.com
 -- copyright:           
 -- category:            
 build-type:          Simple
-extra-source-files:  ChangeLog.md
+extra-source-files:  changelog.md
 cabal-version:       >=1.10
 
 executable waterflow
