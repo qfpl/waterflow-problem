@@ -20,7 +20,10 @@ executable waterflow
   other-modules:       Waterflow.Haskell
                      , Waterflow.Java
                      , Waterflow.Common
-  -- other-extensions:    
+                     , Java.Program
+                     , Java.Model.JavaShow
+                     , Java.Model.Expr
+                     , Java.Model.Stm
   build-depends:       base >=4.9 && <4.10
                      , directory
                      , mtl
