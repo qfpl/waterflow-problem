@@ -15,12 +15,12 @@ To build a slideshow, assuming you have `nix` and `pandoc` installed:
 nix-shell
 cabal configure && cabal build
 ./dist/build/waterflow/waterflow
-./build-slides.sh # or whatever pandoc commands you want to run on slides.md
+pandoc slides.md -s -t slidy -o slides.html # or whatever pandoc commands you want to run on slides.md
 ```
 
 If you're happy with the above, you have `nix` installed, and you want to type fewer characters:
 ```
-nix-build release.nix
+nix-build
 ```
 will create a directory named `result` with the slideshow in it.
 
