@@ -47,7 +47,7 @@ drawFoldl1Max p@(Problem hs) i =
   in
     hcat (zipWith f [0..] s) |||
     strutX space |||
-    t "foldl1 max"
+    t "scanl1 max heights"
 
 drawFoldl1MaxLine ::
   Problem ->
@@ -129,7 +129,7 @@ drawFoldr1Max p@(Problem hs) i =
   in
     hcat (reverse . zipWith f [0..] . reverse $ s) |||
     strutX space |||
-    t "foldr1 max"
+    t "scanr1 max heights"
 
 drawFoldr1MaxLine ::
   Problem ->

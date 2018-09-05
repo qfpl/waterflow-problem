@@ -84,9 +84,9 @@ main =
   in do
     createDirectoryIfMissing False "./images"
     slides <- execWriterT $ do
-      tell ["% Why Functional Programming?\n", "% Tony Morris\n"]
+--       tell ["% Why Functional Programming?\n", "% Tony Morris\n"]
 
-      tell ["# An example of a programming problem \n"]
+--       tell ["# An example of a programming problem \n"]
       zipWithM_ (render' "problem") [0..] cds
 
       tell ["# A solution using functional programming \n"]
