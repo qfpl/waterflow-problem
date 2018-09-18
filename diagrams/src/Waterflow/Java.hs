@@ -79,7 +79,7 @@ waterflow (Problem hs) =
       If (Gt (heightsIx vLeft) (ReadRef (RVar vLeftMax))) (
           WriteRef (RVar vLeftMax) (ReadRef (RIx (RVar vHeights) (ReadRef (RVar vLeft))))
       ) `Seq`
-      If (Gt (heightsIx vRight) (ReadRef (RVar vRightMax))) (
+      If (Lt (heightsIx vRight) (ReadRef (RVar vRightMax))) (
           WriteRef (RVar vRightMax) (ReadRef (RIx (RVar vHeights) (ReadRef (RVar vRight))))
       ) `Seq`
       IfElse (Gte (ReadRef (RVar vLeftMax)) (ReadRef (RVar vRightMax))) (
